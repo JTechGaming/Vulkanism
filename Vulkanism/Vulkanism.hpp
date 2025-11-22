@@ -4,26 +4,35 @@
 #include <ostream>
 #include <cmath>
 #include <algorithm>
+#include <numbers>
 
 // Name: Vulkanism -> Vulkan internal spectra math library
 
 // todo: matrix<Y, Rows, Cols>, Quaternion<T>, Transform<T> (pos, rot, scale)
 // todo: all the vulkan stuff
 
+template <class T>
+requires std::is_floating_point_v<T>
+class Quaternion;
+
 inline constexpr int byteAlignment = { 16 };
 
+constexpr double degToRad(const double deg) { // idk if it can be a constexpr
+    return deg*std::numbers::pi/180;
+}
+
+/*
+ *  Vectors
+ */
 template <class T>
 requires std::is_floating_point_v<T>
 class Vector2 {
 public:
-    using value_type = T;
+    T x, y;
 
-    alignas(byteAlignment) T data[2];
-    T& x = data[0];
-    T& y = data[1];
-
-    Vector2() : data{0,0}, x(data[0]), y(data[1]) {}
-    Vector2(T x_, T y_) : data{x_,y_}, x(data[0]), y(data[1]) {}
+    // Constructors
+    constexpr Vector2() : x(0), y(0) {}
+    constexpr Vector2(T x_, T y_) : x(x_), y(y_) {}
 
     // Special initializers
     static constexpr Vector2 zero() { return Vector2(0,0); }
@@ -140,14 +149,21 @@ public:
         return os << "[" << v.x << " ; " << v.y << "]";
     }
 
-    T& operator[](size_t index) { return data[index]; }
-    const T& operator[](size_t index) const { return data[index]; }
+    // Indexing
+    T& operator[](size_t i) {
+        switch (i) { case 0: return x; default: return y; }
+    }
 
-    T* begin() { return data; }
-    T* end()   { return data + 2; }
+    const T& operator[](size_t i) const {
+        switch (i) { case 0: return x; default: return y; }
+    }
 
-    const T* begin() const { return data; }
-    const T* end()   const { return data + 2; }
+    // Iteration
+    T* begin() { return &x; }
+    T* end()   { return &x + 2; }
+
+    const T* begin() const { return &x; }
+    const T* end()   const { return &x + 2; }
 };
 
 template<std::floating_point T>
@@ -161,13 +177,11 @@ class Vector3 {
 public:
     using value_type = T;
 
-    alignas(byteAlignment) T data[3];
-    T& x = data[0];
-    T& y = data[1];
-    T& z = data[2];
+    T x, y, z;
 
-    Vector3() : data{0,0,0}, x(data[0]), y(data[1]), z(data[2]) {}
-    Vector3(T x_, T y_, T z_) : data{x_,y_,z_}, x(data[0]), y(data[1]), z(data[2]) {}
+    // Constructors
+    constexpr Vector3() : x(0), y(0), z(0) {}
+    constexpr Vector3(T x_, T y_, T z_) : x(x_), y(y_), z(z_) {}
 
     // Special initializers
     static constexpr Vector3 zero() { return Vector3(0,0, 0); }
@@ -296,14 +310,26 @@ public:
         return {x, y};
     }
 
-    T& operator[](size_t index) { return data[index]; }
-    const T& operator[](size_t index) const { return data[index]; }
+    /*
+     *  Rotate this vector around the specified axis with the angle in degrees
+     */
+    Vector3<T> rotate(T angle, const Vector3<T>& axis);
+    
+    // Indexing
+    T& operator[](size_t i) {
+        switch (i) { case 0: return x; case 1: return y; default: return z; }
+    }
 
-    T* begin() { return data; }
-    T* end()   { return data + 3; }
+    const T& operator[](size_t i) const {
+        switch (i) { case 0: return x; case 1: return y; default: return z; }
+    }
 
-    const T* begin() const { return data; }
-    const T* end()   const { return data + 3; }
+    // Iteration
+    T* begin() { return &x; }
+    T* end()   { return &x + 3; }
+
+    const T* begin() const { return &x; }
+    const T* end()   const { return &x + 3; }
 };
 
 template<std::floating_point T>
@@ -315,16 +341,11 @@ template <class T>
 requires std::is_floating_point_v<T>
 class Vector4 {
 public:
-    using value_type = T;
+    T x, y, z, w;
 
-    alignas(byteAlignment) T data[4];
-    T& x = data[0];
-    T& y = data[1];
-    T& z = data[2];
-    T& w = data[3];
-
-    Vector4() : data{0,0,0,0}, x(data[0]), y(data[1]), z(data[2]), w(data[3]) {}
-    Vector4(T x_, T y_, T z_, T w_) : data{x_,y_,z_,w_}, x(data[0]), y(data[1]), z(data[2]), w(data[3]) {}
+    // Constructors
+    constexpr Vector4() : x(0), y(0), z(0), w(0) {}
+    constexpr Vector4(T x_, T y_, T z_, T w_) : x(x_), y(y_), z(z_), w(w_) {}
 
     // Special initializers
     static constexpr Vector4 zero() { return Vector4(0,0,0,0); }
@@ -457,19 +478,169 @@ public:
         return {x, y, z};
     }
 
-    T& operator[](size_t index) { return data[index]; }
-    const T& operator[](size_t index) const { return data[index]; }
+    // Indexing
+    T& operator[](size_t i) {
+        switch (i) { case 0: return x; case 1: return y; case 2: return z; default: return w; }
+    }
 
-    T* begin() { return data; }
-    T* end()   { return data + 4; }
+    const T& operator[](size_t i) const {
+        switch (i) { case 0: return x; case 1: return y; case 2: return z; default: return w; }
+    }
 
-    const T* begin() const { return data; }
-    const T* end()   const { return data + 4; }
+    // Iteration
+    T* begin() { return &x; }
+    T* end()   { return &x + 4; }
+
+    const T* begin() const { return &x; }
+    const T* end()   const { return &x + 4; }
 };
 
 template<std::floating_point T>
 inline Vector4<T> operator*(T scalar, const Vector4<T>& v) noexcept {
     return v.multiply(scalar);
+}
+
+/*
+ *  Quaternions
+ */
+template <class T>
+requires std::is_floating_point_v<T>
+class Quaternion {
+public:
+    using value_type = T;
+    T w;
+    Vector3<T> v;
+
+    constexpr Quaternion() : w(1), v(0,0,0) {}
+
+    constexpr Quaternion(T w_, const Vector3<T>& v_)
+        : w(w_), v(v_) {}
+
+    constexpr Quaternion add(const Quaternion& other) const noexcept {
+        return Quaternion(
+            w+other.w, Vector3(
+                v.x+other.v.x,
+                v.y+other.v.y,
+                v.z+other.v.z
+            )
+        );
+    }
+
+    constexpr Quaternion subtract(const Quaternion& other) const noexcept {
+        return Quaternion(
+            w-other.w, Vector3(
+                v.x-other.v.x,
+                v.y-other.v.y,
+                v.z-other.v.z
+            )
+        );
+    }
+    
+    constexpr Quaternion multiply(const T scalar) const noexcept {
+        return Quaternion(
+            w*scalar,Vector3(
+                v.x*scalar,
+                v.y*scalar,
+                v.z*scalar
+            )
+        );
+    }
+    
+    constexpr Quaternion product(const Quaternion& other) const noexcept {
+        return Quaternion(
+            w*other.w - v.x*other.v.x - v.y*other.v.y - v.z*other.v.z,
+            Vector3<T>(
+                w*other.v.x + v.x*other.w + v.y*other.v.z - v.z*other.v.y,
+                w*other.v.y + v.y*other.w + v.z*other.v.x - v.x*other.v.z,
+                w*other.v.z + v.z*other.w + v.x*other.v.y - v.y*other.v.x
+            )
+        );
+    }
+
+    constexpr T dot(const Quaternion& other) const noexcept {
+        return w*other.w + v.dot(other.v);
+    }
+
+    constexpr Quaternion conjugate() const noexcept {
+        return Quaternion(w, Vector3<T>(-v.x, -v.y, -v.z));
+    }
+
+    constexpr T squareNorm() const noexcept {
+        return w*w+v.x*v.x+v.y*v.y+v.z*v.z;
+    }
+    
+    constexpr T norm() const noexcept {
+        return std::sqrt(squareNorm());
+    }
+
+    constexpr Quaternion normalize() const noexcept {
+        return *this / norm();
+    }
+
+    constexpr Quaternion inverse() const noexcept {
+        T n = squareNorm();
+        return Quaternion(w/n, -v/n);
+    }
+    
+    constexpr Quaternion difference(const Quaternion& other) const noexcept {
+        return other * inverse();
+    }
+
+    constexpr T angularDifference(const Quaternion& other) const noexcept {
+        return 2 * std::acos(difference(other).w);
+    }
+
+    constexpr Quaternion operator*(const Quaternion& other) const noexcept {
+        return product(other);
+    }
+
+    constexpr Quaternion operator*(const T scalar) const noexcept {
+        return multiply(scalar);
+    }
+
+    constexpr Quaternion operator+(const Quaternion& other) const noexcept {
+        return add(other);
+    }
+
+    constexpr Quaternion operator-(const Quaternion& other) const noexcept {
+        return subtract(other);
+    }
+
+    constexpr Quaternion slerp(const Quaternion& other, T time) {
+        T angle = dot(other);
+
+        // If quaternions are reversed, flip the second one
+        Quaternion end = other;
+        if (angle < 0) {
+            angle = -angle;
+            end = other * -1;
+        }
+
+        // If very close, do linear interpolation
+        if (angle > 0.9995) {
+            return (*this)*(1-time) + end*time;
+        }
+
+        T θ = std::acos(angle);
+        T s = std::sin(θ);
+
+        T w1 = std::sin((1-time)*θ) / s;
+        T w2 = std::sin(time*θ) / s;
+
+        return (*this)*w1 + end*w2;
+    }
+};
+
+template <class T>
+requires std::is_floating_point_v<T>
+Vector3<T> Vector3<T>::rotate(T angle, const Vector3<T>& axis) {
+    T half_angle = angle*std::numbers::pi/T(360); // 360 instead of 180 to bypass the additional division by 2
+    T s = std::sin(half_angle);
+    T c = std::cos(half_angle);
+    Quaternion<T> q(c, axis.normalize() * s);
+    Quaternion<T> p(T(0), *this);
+    Quaternion<T> result = q * p * q.conjugate();
+    return result.v;
 }
 
 inline int main(int argc, char* argv[]) {
@@ -481,6 +652,9 @@ inline int main(int argc, char* argv[]) {
     std::cout << vector2fC.y << '\n';
     std::cout << vector2fA.magnitude() << '\n';
     std::cout << vector2fA.reflect(vector2fB.normalize()) << '\n';
+
+    Vector3<double> test = Vector3(1.0, 0.0, 0.0);
+    std::cout << test.rotate(90.0, Vector3(0.0, 1.0, 0.0)) << '\n';
     
     return 0;
 }
