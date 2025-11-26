@@ -5,6 +5,7 @@
 #include <cmath>
 #include <algorithm>
 #include <numbers>
+#include <vector>
 
 // Name: Vulkanism -> Vulkan internal spectra math library
 
@@ -633,6 +634,54 @@ public:
 
 template <class T>
 requires std::is_floating_point_v<T>
+class Mat3x3 {
+public:
+    T a, b, c, d, e, f, g, h, i;
+    // Constructors
+    constexpr Mat3x3() : a(0), b(0), c(0), d(0), e(0), f(0), g(0), h(0), i(0) {}
+    constexpr Mat3x3(T a, T b, T c, T d, T e, T f, T g, T h, T i) : a(a), b(b), c(c), d(d), e(e), f(f), g(g), h(h), i(i) {}
+
+    friend std::ostream& operator<<(std::ostream& os, const Mat3x3& v) {
+        return os
+        << "[ " << v.a << "  " << v.b << "  " << v.c << "\n"
+        << "  " << v.d << "  " << v.e << "  " << v.f << "\n"
+        << "  " << v.g << "  " << v.h << "  " << v.i << " ]";
+    }
+};
+
+template <class T, size_t Rows, size_t Cols>
+requires std::is_floating_point_v<T>
+class Mat {
+public:
+    std::array<std::array<T, Cols>, Rows> m{};
+
+    constexpr T& operator()(size_t r, size_t c)
+    {
+        return m[r * Cols + c];
+    }
+
+    constexpr const T& operator()(size_t r, size_t c) const
+    {
+        return m[r * Cols + c];
+    }
+
+    constexpr Mat() = default;
+
+    template<class... Args>
+    constexpr Mat(Args... args)
+    {
+        static_assert(sizeof...(args) == Rows * Cols, "Initializer does not match matrix size");
+
+        std::array<T, Rows * Cols> flat{ T(args)... };
+
+        for (size_t r = 0; r < Rows; r++)
+            for (size_t c = 0; c < Cols; c++)
+                m[r][c] = flat[r * Cols + c];
+    }
+};
+
+template <class T>
+requires std::is_floating_point_v<T>
 Vector3<T> Vector3<T>::rotate(T angle, const Vector3<T>& axis) {
     T half_angle = angle*std::numbers::pi/T(360); // 360 instead of 180 to bypass the additional division by 2
     T s = std::sin(half_angle);
@@ -655,6 +704,9 @@ inline int main(int argc, char* argv[]) {
 
     Vector3<double> test = Vector3(1.0, 0.0, 0.0);
     std::cout << test.rotate(90.0, Vector3(0.0, 1.0, 0.0)) << '\n';
+
+    Mat3x3<double> testMat3 = Mat3x3(1.0, 2.0, 6.0, 1.0, 0.0, 4.0, 1.5, 6.0, 1.0);
+    std::cout << testMat3 << '\n';
     
     return 0;
 }
