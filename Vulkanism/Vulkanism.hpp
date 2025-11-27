@@ -669,7 +669,7 @@ public:
     constexpr Mat() = default;
 
     template<class... Args>
-    constexpr Mat(Args... args)
+    constexpr Mat(Args... args) const noexcept 
     {
         static_assert(sizeof...(args) == Rows * Cols, "Initializer does not match matrix size");
 
@@ -681,7 +681,7 @@ public:
     }
 
     template<size_t OtherCols>
-    constexpr Mat operator*(Mat<T, Cols, OtherCols>& other)
+    constexpr Mat operator*(Mat<T, Cols, OtherCols>& other) const noexcept 
     {
         static_assert(Rows == OtherCols, "Dimensions of multiplied matrices do not match");
         Mat<T, Rows, OtherCols> result{};
@@ -697,6 +697,52 @@ public:
         return result;
     }
 
+    constexpr Vector2<T> operator*(Vector2<T>& vec) const noexcept  {
+        T newX = T(0);
+        T newY = T(0);
+        for (int i = 0; i < Cols; ++i) {
+            newX += m[i][0] * vec.x;
+            newY += m[i][1] * vec.y;
+        }
+        return Vector2<T>(newX, newY);
+    }
+
+    constexpr Vector3<T> operator*(Vector3<T>& vec) const noexcept  {
+        T newX = T(0);
+        T newY = T(0);
+        T newZ = T(0);
+        for (int i = 0; i < Cols; ++i) {
+            newX += m[i][0] * vec.x;
+            newY += m[i][1] * vec.y;
+            newZ += m[i][2] * vec.z;
+        }
+        return Vector3<T>(newX, newY, newZ);
+    }
+
+    constexpr Vector4<T> operator*(Vector4<T>& vec) const noexcept  {
+        T newX = T(0);
+        T newY = T(0);
+        T newZ = T(0);
+        T newW = T(0);
+        for (int i = 0; i < Cols; ++i) {
+            newX += m[i][0] * vec.x;
+            newY += m[i][1] * vec.y;
+            newZ += m[i][2] * vec.z;
+            newW += m[i][3] * vec.w;
+        }
+        return Vector4<T>(newX, newY, newZ, newW);
+    }
+
+    constexpr Mat identity() const noexcept {
+        const Mat mat = Mat();
+        for (int row = 0; row < Rows; ++row) {
+            for (int col = 0; col < Cols; ++col) {
+                mat[row][col] = row == col;
+            }
+        }
+        return mat;
+    }
+
     friend std::ostream& operator<<(std::ostream& os, const Mat& mat) {
         os << "[\n";
         for (size_t row = 0; row < Rows; ++row) {
@@ -709,6 +755,24 @@ public:
         }
         os << "\n]";
         return os;
+    }
+};
+
+template <class T>
+requires std::is_floating_point_v<T>
+class Transform {
+public:
+    Vector3<T> position;
+    Quaternion<T> rotation;
+    Vector3<T> scale;
+
+    constexpr Transform() : position(), rotation(), scale() {}
+
+    constexpr Transform(const Vector3<T>& p, const Quaternion<T>& r, const Vector3<T>& s)
+        : position(p), rotation(r), scale(s) {}
+
+    friend std::ostream& operator<<(std::ostream& os, const Mat& mat) {
+        return os << "Loc: " << position << " , Rot: " << rotation << " , Scale: " << scale << '\n';
     }
 };
 
