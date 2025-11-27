@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <numbers>
 #include <vector>
+#include <array>
 
 // Name: Vulkanism -> Vulkan internal spectra math library
 
@@ -632,22 +633,22 @@ public:
     }
 };
 
-template <class T>
-requires std::is_floating_point_v<T>
-class Mat3x3 {
-public:
-    T a, b, c, d, e, f, g, h, i;
-    // Constructors
-    constexpr Mat3x3() : a(0), b(0), c(0), d(0), e(0), f(0), g(0), h(0), i(0) {}
-    constexpr Mat3x3(T a, T b, T c, T d, T e, T f, T g, T h, T i) : a(a), b(b), c(c), d(d), e(e), f(f), g(g), h(h), i(i) {}
-
-    friend std::ostream& operator<<(std::ostream& os, const Mat3x3& v) {
-        return os
-        << "[ " << v.a << "  " << v.b << "  " << v.c << "\n"
-        << "  " << v.d << "  " << v.e << "  " << v.f << "\n"
-        << "  " << v.g << "  " << v.h << "  " << v.i << " ]";
-    }
-};
+// template <class T>
+// requires std::is_floating_point_v<T>
+// class Mat3x3 {
+// public:
+//     T a, b, c, d, e, f, g, h, i;
+//     // Constructors
+//     constexpr Mat3x3() : a(0), b(0), c(0), d(0), e(0), f(0), g(0), h(0), i(0) {}
+//     constexpr Mat3x3(T a, T b, T c, T d, T e, T f, T g, T h, T i) : a(a), b(b), c(c), d(d), e(e), f(f), g(g), h(h), i(i) {}
+//
+//     friend std::ostream& operator<<(std::ostream& os, const Mat3x3& v) {
+//         return os
+//         << "[ " << v.a << "  " << v.b << "  " << v.c << "\n"
+//         << "  " << v.d << "  " << v.e << "  " << v.f << "\n"
+//         << "  " << v.g << "  " << v.h << "  " << v.i << " ]";
+//     }
+// };
 
 template <class T, size_t Rows, size_t Cols>
 requires std::is_floating_point_v<T>
@@ -657,12 +658,12 @@ public:
 
     constexpr T& operator()(size_t r, size_t c)
     {
-        return m[r * Cols + c];
+        return m[r][c];
     }
 
     constexpr const T& operator()(size_t r, size_t c) const
     {
-        return m[r * Cols + c];
+        return m[r][c];
     }
 
     constexpr Mat() = default;
@@ -677,6 +678,37 @@ public:
         for (size_t r = 0; r < Rows; r++)
             for (size_t c = 0; c < Cols; c++)
                 m[r][c] = flat[r * Cols + c];
+    }
+
+    template<size_t OtherCols>
+    constexpr Mat operator*(Mat<T, Cols, OtherCols>& other)
+    {
+        static_assert(Rows == OtherCols, "Dimensions of multiplied matrices do not match");
+        Mat<T, Rows, OtherCols> result{};
+
+        for (size_t r = 0; r < Rows; ++r)
+            for (size_t c = 0; c < OtherCols; ++c) {
+                T sum = T(0);
+                for (size_t k = 0; k < Cols; ++k)
+                    sum += (*this)(r, k) * other(k, c);
+                result(r, c) = sum;
+            }
+
+        return result;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const Mat& mat) {
+        os << "[\n";
+        for (size_t row = 0; row < Rows; ++row) {
+            os << "  ";
+            for (size_t col = 0; col < Cols; ++col) {
+                os << mat.m[row][col];
+                if (col + 1 < Cols) os << "  ";
+            }
+            if (row + 1 < Rows) os << "\n";
+        }
+        os << "\n]";
+        return os;
     }
 };
 
@@ -705,8 +737,9 @@ inline int main(int argc, char* argv[]) {
     Vector3<double> test = Vector3(1.0, 0.0, 0.0);
     std::cout << test.rotate(90.0, Vector3(0.0, 1.0, 0.0)) << '\n';
 
-    Mat3x3<double> testMat3 = Mat3x3(1.0, 2.0, 6.0, 1.0, 0.0, 4.0, 1.5, 6.0, 1.0);
-    std::cout << testMat3 << '\n';
+    Mat<double, 3, 3> testMat3 = Mat<double, 3, 3>(1.0, 2.0, 6.0, 1.0, 0.0, 4.0, 1.5, 6.0, 1.0);
+    Mat<double, 3, 4> testMat4 = Mat<double, 3, 4>(1.0, 2.0, 6.0, 1.0, 0.0, 4.0, 1.5, 6.0, 1.0, 1.5, 6.0, 1.0);
+    std::cout << testMat3*testMat4 << '\n';
     
     return 0;
 }
